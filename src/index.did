@@ -1,0 +1,7 @@
+service: () -> {
+    addMenuItem: (text, text, int) -> (text);
+    addTableReservation: (text, text, text, int) -> (text);
+    getMenuItems: () -> (vec record {id:text; name:text; description:text; price:int}) query;
+    getTableReservations: () -> (vec record {id:text; date:text; name:text; time:text; numberOfGuests:int}) query;
+    updateMenuItem: (text, text, text, int) -> ();
+}
