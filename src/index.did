@@ -1,7 +1,35 @@
-service: () -> {
-    addMenuItem: (text, text, int) -> (text);
-    addTableReservation: (text, text, text, int) -> (text);
-    getMenuItems: () -> (vec record {id:text; name:text; description:text; price:int}) query;
-    getTableReservations: () -> (vec record {id:text; date:text; name:text; time:text; numberOfGuests:int}) query;
-    updateMenuItem: (text, text, text, int) -> ();
+type MenuItem = record {
+  id : text;
+  name : text;
+  createdAt : nat64;
+  description : text;
+  updatedAt : opt nat64;
+  price : nat;
+};
+type MenuItemPayload = record { name : text; description : text; price : nat };
+type TableReservation = record {
+  id : text;
+  date : text;
+  name : text;
+  createdAt : nat64;
+  time : text;
+  updatedAt : opt nat64;
+  numberOfGuests : int;
+};
+type TableReservationPayload = record {
+  date : text;
+  name : text;
+  time : text;
+  numberOfGuests : int;
+};
+type _AzleResult = variant { Ok : MenuItem; Err : text };
+type _AzleResult_1 = variant { Ok : TableReservation; Err : text };
+type _AzleResult_2 = variant { Ok : vec MenuItem; Err : text };
+type _AzleResult_3 = variant { Ok : vec TableReservation; Err : text };
+service : () -> {
+  addMenuItem : (MenuItemPayload) -> (_AzleResult);
+  addTableReservation : (TableReservationPayload) -> (_AzleResult_1);
+  getMenuItems : () -> (_AzleResult_2) query;
+  getTableReservations : () -> (_AzleResult_3) query;
+  updateMenuItem : (text, MenuItemPayload) -> (_AzleResult);
 }

@@ -1,97 +1,190 @@
 import {
-  Canister,
+  $query,
+  $update,
   Record,
   StableBTreeMap,
   Vec,
-  Void,
+  Result,
+  nat64,
+  ic,
+  Opt,
+  match,
+  nat,
   int,
-  query,
-  text,
-  update,
 } from "azle";
 import { v4 as uuidv4 } from "uuid";
 
 // Define the MenuItem structure
-const MenuItem = Record({
-  id: text,
-  name: text,
-  description: text,
-  price: int,
-});
+type MenuItem = Record<{
+  id: string;
+  name: string;
+  description: string;
+  price: nat;
+  createdAt: nat64;
+  updatedAt: Opt<nat64>
+}>;
 
-type MenuItem = typeof MenuItem;
+// Define the MenuItem structure
+type MenuItemPayload = Record<{
+  name: string;
+  description: string;
+  price: nat;
+}>;
 
 // Define the TableReservation structure
-const TableReservation = Record({
-  id: text,
-  name: text,
-  date: text,
-  time: text,
-  numberOfGuests: int,
-});
+type TableReservation = Record<{
+  id: string;
+  name: string;
+  date: string;
+  time: string;
+  numberOfGuests: int;
+  createdAt: nat64;
+  updatedAt: Opt<nat64>
+}>;
 
-type TableReservation = typeof TableReservation;
+// Define the TableReservation structure
+type TableReservationPayload = Record<{
+  name: string;
+  date: string;
+  time: string;
+  numberOfGuests: int;
+}>;
 
 // Initialize the menu items and table reservations storage
-let menuItemsStorage = StableBTreeMap(text, MenuItem, 0);
-let tableReservationsStorage = StableBTreeMap(text, TableReservation, 0);
+const menuItemsStorage = new StableBTreeMap<string, MenuItem>(0, 44, 1024);
+const tableReservationsStorage = new StableBTreeMap<string, TableReservation>(1, 44, 1024);
 
-export default Canister({
-  // Add a new menu item
-  addMenuItem: update([text, text, int], text, (name, description, price) => {
+// Add a MenuItem
+$update;
+export function addMenuItem(payload: MenuItemPayload): Result<MenuItem, string> {
+  try {
+    // Payload validation
+    if (!payload.name || !payload.description || payload.price <= 0) {
+      throw new Error("Invalid payload for adding a menu item.");
+    }
+
+    // Explicit property setting
     const id = uuidv4();
-    menuItemsStorage.insert(id, {
+    const menuItem: MenuItem = {
       id: id,
-      name: name,
-      description: description,
-      price: price,
+      name: payload.name,
+      description: payload.description,
+      price: payload.price,
+      createdAt: ic.time(),
+      updatedAt: Opt.None,
+    };
+
+    // Insert the menu item
+    menuItemsStorage.insert(id, menuItem);
+    return Result.Ok<MenuItem, string>(menuItem);
+  } catch (error) {
+    // Error handling
+    return Result.Err<MenuItem, string>(`Failed to add menu item: ${error}`);
+  }
+}
+
+// Update an existing menu item
+$update;
+export function updateMenuItem(id: string, payload: MenuItemPayload): Result<MenuItem, string> {
+  try {
+    // Validation Id
+    if (!id) {
+      throw new Error("Invalid Id Parameter.");
+    }
+
+    // Payload validation
+    if (!payload.name || !payload.description || payload.price <= 0) {
+      throw new Error("Invalid payload for updating a menu item.");
+    }
+
+    const result = match(menuItemsStorage.get(id), {
+      Some: (existingMenuItem) => {
+        // Explicit property setting
+        const updatedMenuItem: MenuItem = {
+          ...existingMenuItem,
+          name: payload.name,
+          description: payload.description,
+          price: payload.price,
+          updatedAt: Opt.Some(ic.time()),
+        };
+
+        // Insert the updated menu item
+        menuItemsStorage.insert(id, updatedMenuItem);
+        return Result.Ok<MenuItem, string>(updatedMenuItem);
+      },
+      None: () => Result.Err<MenuItem, string>(`Menu item with ID=${id} not found.`),
     });
-    return id;
-  }),
 
-  // Update an existing menu item
-  updateMenuItem: update(
-    [text, text, text, int],
-    Void,
-    (id, name, description, price) => {
-      let menuItemOpt = menuItemsStorage.get(id);
-      if ("None" in menuItemOpt) {
-        throw new Error("Menu item not exist");
-      }
+    return result;
+  } catch (error) {
+    // Error handling
+    return Result.Err<MenuItem, string>(`Failed to update menu item: ${error}`);
+  }
+}
 
-      menuItemsStorage.insert(id, {
-        id: id,
-        name: name,
-        description: description,
-        price: price,
-      });
+// Get all menu items
+$query;
+export function getMenuItems(): Result<Vec<MenuItem>, string> {
+  try {
+    // Error handling
+    return Result.Ok(menuItemsStorage.values());
+  } catch (error) {
+    return Result.Err('Failed to retrieve menu items');
+  }
+}
+
+// ... (Other functions remain unchanged)
+
+// Add a TableReservation
+$update
+export function addTableReservation(payload: TableReservationPayload): Result<TableReservation, string> {
+  try {
+    // Payload validation
+    if (!payload.name || !payload.date || !payload.time || payload.numberOfGuests <= 0) {
+      throw new Error("Invalid payload for adding a table reservation.");
     }
-  ),
 
-  // List all menu items
-  getMenuItems: query([], Vec(MenuItem), () => {
-    return menuItemsStorage.values();
-  }),
+    // Explicit property setting
+    const id = uuidv4();
+    const reservation: TableReservation = {
+      id: id,
+      name: payload.name,
+      date: payload.date,
+      time: payload.time,
+      numberOfGuests: payload.numberOfGuests,
+      createdAt: ic.time(),
+      updatedAt: Opt.None,
+    };
 
-  // Add a table reservation
-  addTableReservation: update(
-    [text, text, text, int],
-    text,
-    (name, date, time, numberOfGuests) => {
-      const id = uuidv4();
-      tableReservationsStorage.insert(id, {
-        id: id,
-        name: name,
-        date: date,
-        time: time,
-        numberOfGuests: numberOfGuests,
-      });
-      return id;
+    // Insert the table reservation
+    tableReservationsStorage.insert(id, reservation);
+    return Result.Ok<TableReservation, string>(reservation);
+  } catch (error) {
+    // Error handling
+    return Result.Err<TableReservation, string>(`Failed to add table reservation: ${error}`);
+  }
+}
+
+$query
+export function getTableReservations(): Result<Vec<TableReservation>, string> {
+  try {
+    return Result.Ok(tableReservationsStorage.values());
+  } catch (error) {
+    return Result.Err('Failed to retrieve table reservations');
+  }
+}
+
+
+globalThis.crypto = {
+  //@ts-ignore
+  getRandomValues: () => {
+    let array = new Uint8Array(32);
+
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
     }
-  ),
 
-  // List all table reservations
-  getTableReservations: query([], Vec(TableReservation), () => {
-    return tableReservationsStorage.values();
-  }),
-});
+    return array;
+  },
+};
+
