@@ -1,13 +1,12 @@
 {
   "canisters": {
-    "restaurant": {
-      "type": "custom",
-      "main": "src/index.ts",
-      "candid": "src/index.did",
-      "build": "npx azle restaurant",
-      "ts": "src/index.ts",
-      "wasm": ".azle/restaurant/restaurant.wasm",
-      "gzip": true
-    }
+      "restaurant": {
+          "type": "custom",
+          "build": "npx azle restaurant",
+          "root": "src",
+          "ts": "src/index.ts",
+          "candid": "src/index.did",
+          "wasm": ".azle/restaurant/restaurant.wasm.gz"
+      }
   }
 }
