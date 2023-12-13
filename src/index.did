@@ -1,7 +1,7 @@
 service: () -> {
-    addMenuItem: (text, text, int) -> (text);
-    addTableReservation: (text, text, text, int) -> (text);
+    addMenuItem: (record {name:text; description:text; price:int}) -> (variant {Ok:record {id:text; name:text; description:text; price:int}; Err:variant {InvalidId:text; InvalidPayload:text; NotFound:text}});
+    addTableReservation: (record {date:text; name:text; time:text; numberOfGuests:int}) -> (variant {Ok:record {id:text; date:text; name:text; time:text; numberOfGuests:int}; Err:variant {InvalidId:text; InvalidPayload:text; NotFound:text}});
     getMenuItems: () -> (vec record {id:text; name:text; description:text; price:int}) query;
     getTableReservations: () -> (vec record {id:text; date:text; name:text; time:text; numberOfGuests:int}) query;
-    updateMenuItem: (text, text, text, int) -> ();
+    updateMenuItem: (text, record {name:text; description:text; price:int}) -> (variant {Ok:record {id:text; name:text; description:text; price:int}; Err:variant {InvalidId:text; InvalidPayload:text; NotFound:text}});
 }
